@@ -1,10 +1,18 @@
 import os
 import tempfile
+from datetime import date
 
 import streamlit as st
 
 from crews.carebridge_crew import CareBridgeCrew
 from tools.document_tools import extract_text_from_file
+from database.database import SessionLocal
+from tools.database_tools import (
+    create_patient,
+    create_care_task,
+    approve_care_task,
+    reject_care_task,
+)
 
 
 st.set_page_config(
@@ -30,10 +38,6 @@ def main():
 
     st.divider()
 
-    # --------------------------------------------------
-    # Request
-    # --------------------------------------------------
-
     st.header("CareBridge Assistant")
 
     user_message = st.text_area(
@@ -44,10 +48,6 @@ def main():
         ),
         height=150
     )
-
-    # --------------------------------------------------
-    # Document Upload
-    # --------------------------------------------------
 
     st.header("📄 Healthcare Document")
 
@@ -76,10 +76,6 @@ def main():
         try:
 
             crew = CareBridgeCrew()
-
-            # --------------------------------------------------
-            # Intake Agent
-            # --------------------------------------------------
 
             intake_result = None
 
@@ -139,10 +135,6 @@ def main():
                 st.info(
                     intake_result.reason
                 )
-
-            # --------------------------------------------------
-            # Document Agent
-            # --------------------------------------------------
 
             document_result = None
 
@@ -284,10 +276,6 @@ def main():
                             "for care coordination."
                         )
 
-                    # --------------------------------------------------
-                    # Care Coordinator
-                    # --------------------------------------------------
-
                     if (
                         document_result.follow_up_required
                         and not document_result.requires_human_review
@@ -353,8 +341,8 @@ def main():
 
                         st.warning(
                             "👤 Human approval is required "
-                            "before this task can become an "
-                            "approved care action."
+                            "before this task can become "
+                            "an approved care action."
                         )
 
                         st.write(
@@ -364,11 +352,6 @@ def main():
                         st.caption(
                             task_proposal.reason
                         )
-
-                        # Store proposal temporarily
-                        st.session_state[
-                            "task_proposal"
-                        ] = task_proposal
 
                         st.divider()
 
@@ -382,124 +365,124 @@ def main():
 
                             approve = st.button(
                                 "✅ Approve Task",
-                                type="primary"
+                                type="primary",
+                                key="approve_task"
                             )
 
                         with col2:
 
                             reject = st.button(
-                                "❌ Reject Task"
+                                "❌ Reject Task",
+                                key="reject_task"
                             )
 
-                       if approve:
+                        if approve:
 
-    db = SessionLocal()
+                            db = SessionLocal()
 
-    try:
+                            try:
 
-        patient = create_patient(
-            db=db,
-            patient_code="DEMO-P001",
-            display_name="Synthetic Demo Patient"
-        )
+                                patient = create_patient(
+                                    db=db,
+                                    patient_code="DEMO-P001",
+                                    display_name="Synthetic Demo Patient"
+                                )
 
-        due_date = None
+                                due_date = None
 
-        if task_proposal.due_date:
+                                if task_proposal.due_date:
 
-            from datetime import date
+                                    due_date = date.fromisoformat(
+                                        task_proposal.due_date
+                                    )
 
-            due_date = date.fromisoformat(
-                task_proposal.due_date
-            )
+                                task = create_care_task(
+                                    db=db,
+                                    patient_id=patient.id,
+                                    title=task_proposal.title,
+                                    description=task_proposal.description,
+                                    due_date=due_date,
+                                    priority=task_proposal.priority,
+                                    created_by_agent=(
+                                        "Care Coordinator Agent"
+                                    )
+                                )
 
-        task = create_care_task(
-            db=db,
-            patient_id=patient.id,
-            title=task_proposal.title,
-            description=task_proposal.description,
-            due_date=due_date,
-            priority=task_proposal.priority,
-            created_by_agent="Care Coordinator Agent"
-        )
+                                approved_task = approve_care_task(
+                                    db=db,
+                                    task_id=task.id,
+                                    approved_by="Human Reviewer"
+                                )
 
-        approved_task = approve_care_task(
-            db=db,
-            task_id=task.id,
-            approved_by="Human Reviewer"
-        )
+                                st.success(
+                                    "✅ Task approved and saved "
+                                    "to database."
+                                )
 
-        st.success(
-            f"✅ Task approved and saved to database. "
-            f"Task ID: {approved_task.id}"
-        )
+                                st.write(
+                                    f"Task ID: {approved_task.id}"
+                                )
 
-        st.session_state[
-            "task_status"
-        ] = "APPROVED"
+                            finally:
 
-    finally:
+                                db.close()
 
-        db.close()
+                        if reject:
 
+                            db = SessionLocal()
 
-if reject:
+                            try:
 
-    db = SessionLocal()
+                                patient = create_patient(
+                                    db=db,
+                                    patient_code="DEMO-P001",
+                                    display_name="Synthetic Demo Patient"
+                                )
 
-    try:
+                                due_date = None
 
-        patient = create_patient(
-            db=db,
-            patient_code="DEMO-P001",
-            display_name="Synthetic Demo Patient"
-        )
+                                if task_proposal.due_date:
 
-        due_date = None
+                                    due_date = date.fromisoformat(
+                                        task_proposal.due_date
+                                    )
 
-        if task_proposal.due_date:
+                                task = create_care_task(
+                                    db=db,
+                                    patient_id=patient.id,
+                                    title=task_proposal.title,
+                                    description=task_proposal.description,
+                                    due_date=due_date,
+                                    priority=task_proposal.priority,
+                                    created_by_agent=(
+                                        "Care Coordinator Agent"
+                                    )
+                                )
 
-            from datetime import date
+                                rejected_task = reject_care_task(
+                                    db=db,
+                                    task_id=task.id,
+                                    rejected_by="Human Reviewer"
+                                )
 
-            due_date = date.fromisoformat(
-                task_proposal.due_date
-            )
+                                st.error(
+                                    "❌ Task rejected and "
+                                    "recorded."
+                                )
 
-        task = create_care_task(
-            db=db,
-            patient_id=patient.id,
-            title=task_proposal.title,
-            description=task_proposal.description,
-            due_date=due_date,
-            priority=task_proposal.priority,
-            created_by_agent="Care Coordinator Agent"
-        )
+                                st.write(
+                                    f"Task ID: {rejected_task.id}"
+                                )
 
-        rejected_task = reject_care_task(
-            db=db,
-            task_id=task.id,
-            rejected_by="Human Reviewer"
-        )
+                            finally:
 
-        st.error(
-            f"❌ Task rejected and recorded. "
-            f"Task ID: {rejected_task.id}"
-        )
+                                db.close()
 
-        st.session_state[
-            "task_status"
-        ] = "REJECTED"
-
-    finally:
-
-        db.close()
                 finally:
 
                     try:
 
-                        os.remove(
-                            temp_path
-                        )
+                        os.remove(temp_path)
 
                     except OSError:
 
@@ -519,11 +502,3 @@ if reject:
 
 if __name__ == "__main__":
     main()
-from tools.document_tools import extract_text_from_file
-from database.database import SessionLocal
-from tools.database_tools import (
-    create_patient,
-    create_care_task,
-    approve_care_task,
-    reject_care_task,
-)
