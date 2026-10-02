@@ -4,3 +4,4 @@ pydantic
 sqlalchemy
 langchain
 langchain-openai
+pypdf
