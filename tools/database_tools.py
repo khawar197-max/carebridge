@@ -168,7 +168,6 @@ def approve_care_task(
 
     return task
 
-
 def reject_care_task(
     db: Session,
     task_id: int,
