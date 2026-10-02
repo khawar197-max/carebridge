@@ -1,0 +1,42 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# SQLite database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded/private documents
+documents/uploads/*
+documents/processed/*
+
+# RAG generated files
+rag/vectorstore/*
+knowledge/processed/*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
