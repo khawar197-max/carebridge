@@ -2,6 +2,7 @@ from config import get_llm
 
 from agents.intake_agent import IntakeAgent
 from agents.document_agent import DocumentAgent
+from agents.care_coordinator_agent import CareCoordinatorAgent
 
 
 class CareBridgeCrew:
@@ -21,6 +22,10 @@ class CareBridgeCrew:
             llm=self.llm
         )
 
+        self.care_coordinator_agent = CareCoordinatorAgent(
+            llm=self.llm
+        )
+
     def process_request(
         self,
         user_message: str
@@ -37,4 +42,13 @@ class CareBridgeCrew:
 
         return self.document_agent.analyze(
             document_text
+        )
+
+    def propose_care_task(
+        self,
+        document_result
+    ):
+
+        return self.care_coordinator_agent.propose_task(
+            document_result
         )
