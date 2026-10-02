@@ -24,6 +24,35 @@ st.set_page_config(
 
 def main():
 
+    # ---------------------------------------------------------
+    # SESSION STATE
+    # ---------------------------------------------------------
+
+    if "intake_result" not in st.session_state:
+        st.session_state.intake_result = None
+
+    if "document_result" not in st.session_state:
+        st.session_state.document_result = None
+
+    if "task_proposal" not in st.session_state:
+        st.session_state.task_proposal = None
+
+    if "workflow_completed" not in st.session_state:
+        st.session_state.workflow_completed = False
+
+    if "task_status" not in st.session_state:
+        st.session_state.task_status = None
+
+    if "task_id" not in st.session_state:
+        st.session_state.task_id = None
+
+    if "document_text" not in st.session_state:
+        st.session_state.document_text = None
+
+    # ---------------------------------------------------------
+    # PAGE HEADER
+    # ---------------------------------------------------------
+
     st.title("🏥 CareBridge")
 
     st.subheader(
@@ -38,6 +67,10 @@ def main():
 
     st.divider()
 
+    # ---------------------------------------------------------
+    # USER REQUEST
+    # ---------------------------------------------------------
+
     st.header("CareBridge Assistant")
 
     user_message = st.text_area(
@@ -49,6 +82,10 @@ def main():
         height=150
     )
 
+    # ---------------------------------------------------------
+    # DOCUMENT UPLOAD
+    # ---------------------------------------------------------
+
     st.header("📄 Healthcare Document")
 
     uploaded_file = st.file_uploader(
@@ -59,6 +96,10 @@ def main():
             "de-identified documents only."
         )
     )
+
+    # ---------------------------------------------------------
+    # ANALYZE REQUEST BUTTON
+    # ---------------------------------------------------------
 
     if st.button(
         "Analyze Request",
@@ -77,7 +118,9 @@ def main():
 
             crew = CareBridgeCrew()
 
-            intake_result = None
+            # -------------------------------------------------
+            # INTAKE AGENT
+            # -------------------------------------------------
 
             if user_message.strip():
 
@@ -85,66 +128,17 @@ def main():
                     "CareBridge is analyzing your request..."
                 ):
 
-                    intake_result = crew.process_request(
-                        user_message
+                    st.session_state.intake_result = (
+                        crew.process_request(
+                            user_message
+                        )
                     )
 
-                st.success(
-                    "Request analyzed successfully."
-                )
-
-                st.subheader(
-                    "🧭 Intake Agent Result"
-                )
-
-                col1, col2 = st.columns(2)
-
-                with col1:
-
-                    st.metric(
-                        "Intent",
-                        intake_result.intent
-                    )
-
-                with col2:
-
-                    st.metric(
-                        "Urgency",
-                        intake_result.urgency
-                    )
-
-                st.write(
-                    "**Required Agents:**"
-                )
-
-                for agent in intake_result.required_agents:
-
-                    st.write(
-                        f"• {agent}"
-                    )
-
-                st.write(
-                    "**Human Review Required:**",
-                    intake_result.requires_human_review
-                )
-
-                st.write(
-                    "**Reason:**"
-                )
-
-                st.info(
-                    intake_result.reason
-                )
-
-            document_result = None
+            # -------------------------------------------------
+            # DOCUMENT AGENT
+            # -------------------------------------------------
 
             if uploaded_file:
-
-                st.divider()
-
-                st.subheader(
-                    "📄 Medical Document Agent"
-                )
 
                 file_suffix = os.path.splitext(
                     uploaded_file.name
@@ -182,301 +176,46 @@ def main():
 
                         return
 
-                    st.success(
-                        "Document text extracted."
+                    st.session_state.document_text = (
+                        document_text
                     )
-
-                    with st.expander(
-                        "View extracted document text"
-                    ):
-
-                        st.text(
-                            document_text[:10000]
-                        )
 
                     with st.spinner(
                         "Medical Document Agent is analyzing..."
                     ):
 
-                        document_result = (
+                        st.session_state.document_result = (
                             crew.analyze_document(
                                 document_text
                             )
                         )
 
-                    st.success(
-                        "Document analyzed successfully."
+                    # -----------------------------------------
+                    # CARE COORDINATOR
+                    # -----------------------------------------
+
+                    document_result = (
+                        st.session_state.document_result
                     )
-
-                    col1, col2, col3 = st.columns(3)
-
-                    with col1:
-
-                        st.metric(
-                            "Document Type",
-                            document_result.document_type
-                        )
-
-                    with col2:
-
-                        st.metric(
-                            "Confidence",
-                            f"{document_result.confidence:.0%}"
-                        )
-
-                    with col3:
-
-                        review = (
-                            "YES"
-                            if document_result.requires_human_review
-                            else "NO"
-                        )
-
-                        st.metric(
-                            "Human Review",
-                            review
-                        )
-
-                    st.write(
-                        "**Document Date:**",
-                        document_result.document_date
-                    )
-
-                    st.write(
-                        "**Follow-up Required:**",
-                        document_result.follow_up_required
-                    )
-
-                    st.write(
-                        "**Follow-up Days:**",
-                        document_result.follow_up_days
-                    )
-
-                    st.write(
-                        "**Care Coordination Instructions:**"
-                    )
-
-                    for instruction in (
-                        document_result.instructions
-                    ):
-
-                        st.write(
-                            f"• {instruction}"
-                        )
-
-                    st.info(
-                        document_result.reason
-                    )
-
-                    if document_result.requires_human_review:
-
-                        st.warning(
-                            "⚠️ Human verification is required "
-                            "before this information is used "
-                            "for care coordination."
-                        )
 
                     if (
                         document_result.follow_up_required
                         and not document_result.requires_human_review
                     ):
 
-                        st.divider()
-
-                        st.subheader(
-                            "📋 Care Coordinator Agent"
-                        )
-
                         with st.spinner(
                             "Creating a care coordination proposal..."
                         ):
 
-                            task_proposal = (
+                            st.session_state.task_proposal = (
                                 crew.propose_care_task(
                                     document_result
                                 )
                             )
 
-                        st.success(
-                            "Care coordination proposal created."
-                        )
-
-                        st.write(
-                            "**Proposed Task:**"
-                        )
-
-                        st.info(
-                            task_proposal.title
-                        )
-
-                        st.write(
-                            "**Description:**"
-                        )
-
-                        st.write(
-                            task_proposal.description
-                        )
-
-                        col1, col2 = st.columns(2)
-
-                        with col1:
-
-                            st.write(
-                                "**Due Date:**"
-                            )
-
-                            st.write(
-                                task_proposal.due_date
-                            )
-
-                        with col2:
-
-                            st.write(
-                                "**Priority:**"
-                            )
-
-                            st.write(
-                                task_proposal.priority
-                            )
-
-                        st.warning(
-                            "👤 Human approval is required "
-                            "before this task can become "
-                            "an approved care action."
-                        )
-
-                        st.write(
-                            "**Reason:**"
-                        )
-
-                        st.caption(
-                            task_proposal.reason
-                        )
-
-                        st.divider()
-
-                        st.subheader(
-                            "Human Review"
-                        )
-
-                        col1, col2 = st.columns(2)
-
-                        with col1:
-
-                            approve = st.button(
-                                "✅ Approve Task",
-                                type="primary",
-                                key="approve_task"
-                            )
-
-                        with col2:
-
-                            reject = st.button(
-                                "❌ Reject Task",
-                                key="reject_task"
-                            )
-
-                        if approve:
-
-                            db = SessionLocal()
-
-                            try:
-
-                                patient = create_patient(
-                                    db=db,
-                                    patient_code="DEMO-P001",
-                                    display_name="Synthetic Demo Patient"
-                                )
-
-                                due_date = None
-
-                                if task_proposal.due_date:
-
-                                    due_date = date.fromisoformat(
-                                        task_proposal.due_date
-                                    )
-
-                                task = create_care_task(
-                                    db=db,
-                                    patient_id=patient.id,
-                                    title=task_proposal.title,
-                                    description=task_proposal.description,
-                                    due_date=due_date,
-                                    priority=task_proposal.priority,
-                                    created_by_agent=(
-                                        "Care Coordinator Agent"
-                                    )
-                                )
-
-                                approved_task = approve_care_task(
-                                    db=db,
-                                    task_id=task.id,
-                                    approved_by="Human Reviewer"
-                                )
-
-                                st.success(
-                                    "✅ Task approved and saved "
-                                    "to database."
-                                )
-
-                                st.write(
-                                    f"Task ID: {approved_task.id}"
-                                )
-
-                            finally:
-
-                                db.close()
-
-                        if reject:
-
-                            db = SessionLocal()
-
-                            try:
-
-                                patient = create_patient(
-                                    db=db,
-                                    patient_code="DEMO-P001",
-                                    display_name="Synthetic Demo Patient"
-                                )
-
-                                due_date = None
-
-                                if task_proposal.due_date:
-
-                                    due_date = date.fromisoformat(
-                                        task_proposal.due_date
-                                    )
-
-                                task = create_care_task(
-                                    db=db,
-                                    patient_id=patient.id,
-                                    title=task_proposal.title,
-                                    description=task_proposal.description,
-                                    due_date=due_date,
-                                    priority=task_proposal.priority,
-                                    created_by_agent=(
-                                        "Care Coordinator Agent"
-                                    )
-                                )
-
-                                rejected_task = reject_care_task(
-                                    db=db,
-                                    task_id=task.id,
-                                    rejected_by="Human Reviewer"
-                                )
-
-                                st.error(
-                                    "❌ Task rejected and "
-                                    "recorded."
-                                )
-
-                                st.write(
-                                    f"Task ID: {rejected_task.id}"
-                                )
-
-                            finally:
-
-                                db.close()
+                    st.session_state.workflow_completed = False
+                    st.session_state.task_status = None
+                    st.session_state.task_id = None
 
                 finally:
 
@@ -498,6 +237,416 @@ def main():
             st.caption(
                 f"Technical details: {e}"
             )
+
+    # =========================================================
+    # DISPLAY INTAKE RESULT
+    # =========================================================
+
+    if st.session_state.intake_result:
+
+        intake_result = (
+            st.session_state.intake_result
+        )
+
+        st.success(
+            "Request analyzed successfully."
+        )
+
+        st.subheader(
+            "🧭 Intake Agent Result"
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.metric(
+                "Intent",
+                intake_result.intent
+            )
+
+        with col2:
+
+            st.metric(
+                "Urgency",
+                intake_result.urgency
+            )
+
+        st.write(
+            "**Required Agents:**"
+        )
+
+        for agent in intake_result.required_agents:
+
+            st.write(
+                f"• {agent}"
+            )
+
+        st.write(
+            "**Human Review Required:**",
+            intake_result.requires_human_review
+        )
+
+        st.write(
+            "**Reason:**"
+        )
+
+        st.info(
+            intake_result.reason
+        )
+
+    # =========================================================
+    # DISPLAY DOCUMENT RESULT
+    # =========================================================
+
+    if st.session_state.document_result:
+
+        document_result = (
+            st.session_state.document_result
+        )
+
+        st.divider()
+
+        st.subheader(
+            "📄 Medical Document Agent"
+        )
+
+        st.success(
+            "Document text extracted."
+        )
+
+        if st.session_state.document_text:
+
+            with st.expander(
+                "View extracted document text"
+            ):
+
+                st.text(
+                    st.session_state.document_text[:10000]
+                )
+
+        st.success(
+            "Document analyzed successfully."
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            st.metric(
+                "Document Type",
+                document_result.document_type
+            )
+
+        with col2:
+
+            st.metric(
+                "Confidence",
+                f"{document_result.confidence:.0%}"
+            )
+
+        with col3:
+
+            review = (
+                "YES"
+                if document_result.requires_human_review
+                else "NO"
+            )
+
+            st.metric(
+                "Human Review",
+                review
+            )
+
+        st.write(
+            "**Document Date:**",
+            document_result.document_date
+        )
+
+        st.write(
+            "**Follow-up Required:**",
+            document_result.follow_up_required
+        )
+
+        st.write(
+            "**Follow-up Days:**",
+            document_result.follow_up_days
+        )
+
+        st.write(
+            "**Care Coordination Instructions:**"
+        )
+
+        for instruction in document_result.instructions:
+
+            st.write(
+                f"• {instruction}"
+            )
+
+        st.info(
+            document_result.reason
+        )
+
+        if document_result.requires_human_review:
+
+            st.warning(
+                "⚠️ Human verification is required "
+                "before this information is used "
+                "for care coordination."
+            )
+
+    # =========================================================
+    # CARE COORDINATOR RESULT
+    # =========================================================
+
+    if st.session_state.task_proposal:
+
+        task_proposal = (
+            st.session_state.task_proposal
+        )
+
+        st.divider()
+
+        st.subheader(
+            "📋 Care Coordinator Agent"
+        )
+
+        st.success(
+            "Care coordination proposal created."
+        )
+
+        st.write(
+            "**Proposed Task:**"
+        )
+
+        st.info(
+            task_proposal.title
+        )
+
+        st.write(
+            "**Description:**"
+        )
+
+        st.write(
+            task_proposal.description
+        )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.write(
+                "**Due Date:**"
+            )
+
+            st.write(
+                task_proposal.due_date
+            )
+
+        with col2:
+
+            st.write(
+                "**Priority:**"
+            )
+
+            st.write(
+                task_proposal.priority
+            )
+
+        st.warning(
+            "👤 Human approval is required "
+            "before this task can become "
+            "an approved care action."
+        )
+
+        st.write(
+            "**Reason:**"
+        )
+
+        st.caption(
+            task_proposal.reason
+        )
+
+        # =====================================================
+        # HUMAN REVIEW
+        # =====================================================
+
+        st.divider()
+
+        st.subheader(
+            "Human Review"
+        )
+
+        # -----------------------------------------------------
+        # ALREADY APPROVED
+        # -----------------------------------------------------
+
+        if st.session_state.task_status == "APPROVED":
+
+            st.success(
+                "✅ Task approved and saved to database."
+            )
+
+            st.write(
+                f"Task ID: {st.session_state.task_id}"
+            )
+
+        # -----------------------------------------------------
+        # ALREADY REJECTED
+        # -----------------------------------------------------
+
+        elif st.session_state.task_status == "REJECTED":
+
+            st.error(
+                "❌ Task rejected and recorded."
+            )
+
+            st.write(
+                f"Task ID: {st.session_state.task_id}"
+            )
+
+        # -----------------------------------------------------
+        # WAITING FOR HUMAN REVIEW
+        # -----------------------------------------------------
+
+        else:
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                approve = st.button(
+                    "✅ Approve Task",
+                    type="primary",
+                    key="approve_task"
+                )
+
+            with col2:
+
+                reject = st.button(
+                    "❌ Reject Task",
+                    key="reject_task"
+                )
+
+            # -------------------------------------------------
+            # APPROVE
+            # -------------------------------------------------
+
+            if approve:
+
+                db = SessionLocal()
+
+                try:
+
+                    patient = create_patient(
+                        db=db,
+                        patient_code="DEMO-P001",
+                        display_name="Synthetic Demo Patient"
+                    )
+
+                    due_date = None
+
+                    if task_proposal.due_date:
+
+                        due_date = date.fromisoformat(
+                            task_proposal.due_date
+                        )
+
+                    task = create_care_task(
+                        db=db,
+                        patient_id=patient.id,
+                        title=task_proposal.title,
+                        description=task_proposal.description,
+                        due_date=due_date,
+                        priority=task_proposal.priority,
+                        created_by_agent=(
+                            "Care Coordinator Agent"
+                        )
+                    )
+
+                    approved_task = approve_care_task(
+                        db=db,
+                        task_id=task.id,
+                        approved_by="Human Reviewer"
+                    )
+
+                    st.session_state.task_status = (
+                        "APPROVED"
+                    )
+
+                    st.session_state.task_id = (
+                        approved_task.id
+                    )
+
+                    st.session_state.workflow_completed = (
+                        True
+                    )
+
+                    st.rerun()
+
+                finally:
+
+                    db.close()
+
+            # -------------------------------------------------
+            # REJECT
+            # -------------------------------------------------
+
+            if reject:
+
+                db = SessionLocal()
+
+                try:
+
+                    patient = create_patient(
+                        db=db,
+                        patient_code="DEMO-P001",
+                        display_name="Synthetic Demo Patient"
+                    )
+
+                    due_date = None
+
+                    if task_proposal.due_date:
+
+                        due_date = date.fromisoformat(
+                            task_proposal.due_date
+                        )
+
+                    task = create_care_task(
+                        db=db,
+                        patient_id=patient.id,
+                        title=task_proposal.title,
+                        description=task_proposal.description,
+                        due_date=due_date,
+                        priority=task_proposal.priority,
+                        created_by_agent=(
+                            "Care Coordinator Agent"
+                        )
+                    )
+
+                    rejected_task = reject_care_task(
+                        db=db,
+                        task_id=task.id,
+                        rejected_by="Human Reviewer"
+                    )
+
+                    st.session_state.task_status = (
+                        "REJECTED"
+                    )
+
+                    st.session_state.task_id = (
+                        rejected_task.id
+                    )
+
+                    st.session_state.workflow_completed = (
+                        True
+                    )
+
+                    st.rerun()
+
+                finally:
+
+                    db.close()
 
 
 if __name__ == "__main__":
