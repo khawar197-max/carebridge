@@ -31,7 +31,7 @@ def main():
     st.divider()
 
     # --------------------------------------------------
-    # Request Analysis
+    # Request
     # --------------------------------------------------
 
     st.header("CareBridge Assistant")
@@ -78,8 +78,10 @@ def main():
             crew = CareBridgeCrew()
 
             # --------------------------------------------------
-            # Analyze user request
+            # Intake Agent
             # --------------------------------------------------
+
+            intake_result = None
 
             if user_message.strip():
 
@@ -139,8 +141,10 @@ def main():
                 )
 
             # --------------------------------------------------
-            # Analyze uploaded document
+            # Document Agent
             # --------------------------------------------------
+
+            document_result = None
 
             if uploaded_file:
 
@@ -223,13 +227,9 @@ def main():
 
                     with col2:
 
-                        confidence = (
-                            document_result.confidence
-                        )
-
                         st.metric(
                             "Confidence",
-                            f"{confidence:.0%}"
+                            f"{document_result.confidence:.0%}"
                         )
 
                     with col3:
@@ -284,11 +284,143 @@ def main():
                             "for care coordination."
                         )
 
+                    # --------------------------------------------------
+                    # Care Coordinator
+                    # --------------------------------------------------
+
+                    if (
+                        document_result.follow_up_required
+                        and not document_result.requires_human_review
+                    ):
+
+                        st.divider()
+
+                        st.subheader(
+                            "📋 Care Coordinator Agent"
+                        )
+
+                        with st.spinner(
+                            "Creating a care coordination proposal..."
+                        ):
+
+                            task_proposal = (
+                                crew.propose_care_task(
+                                    document_result
+                                )
+                            )
+
+                        st.success(
+                            "Care coordination proposal created."
+                        )
+
+                        st.write(
+                            "**Proposed Task:**"
+                        )
+
+                        st.info(
+                            task_proposal.title
+                        )
+
+                        st.write(
+                            "**Description:**"
+                        )
+
+                        st.write(
+                            task_proposal.description
+                        )
+
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+
+                            st.write(
+                                "**Due Date:**"
+                            )
+
+                            st.write(
+                                task_proposal.due_date
+                            )
+
+                        with col2:
+
+                            st.write(
+                                "**Priority:**"
+                            )
+
+                            st.write(
+                                task_proposal.priority
+                            )
+
+                        st.warning(
+                            "👤 Human approval is required "
+                            "before this task can become an "
+                            "approved care action."
+                        )
+
+                        st.write(
+                            "**Reason:**"
+                        )
+
+                        st.caption(
+                            task_proposal.reason
+                        )
+
+                        # Store proposal temporarily
+                        st.session_state[
+                            "task_proposal"
+                        ] = task_proposal
+
+                        st.divider()
+
+                        st.subheader(
+                            "Human Review"
+                        )
+
+                        col1, col2 = st.columns(2)
+
+                        with col1:
+
+                            approve = st.button(
+                                "✅ Approve Task",
+                                type="primary"
+                            )
+
+                        with col2:
+
+                            reject = st.button(
+                                "❌ Reject Task"
+                            )
+
+                        if approve:
+
+                            st.success(
+                                "Task approved by human reviewer."
+                            )
+
+                            st.session_state[
+                                "task_status"
+                            ] = "APPROVED"
+
+                        if reject:
+
+                            st.error(
+                                "Task rejected by human reviewer."
+                            )
+
+                            st.session_state[
+                                "task_status"
+                            ] = "REJECTED"
+
                 finally:
 
                     try:
-                        os.remove(temp_path)
+
+                        os.remove(
+                            temp_path
+                        )
+
                     except OSError:
+
                         pass
 
         except Exception as e:
