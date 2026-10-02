@@ -391,26 +391,108 @@ def main():
                                 "❌ Reject Task"
                             )
 
-                        if approve:
+                       if approve:
 
-                            st.success(
-                                "Task approved by human reviewer."
-                            )
+    db = SessionLocal()
 
-                            st.session_state[
-                                "task_status"
-                            ] = "APPROVED"
+    try:
 
-                        if reject:
+        patient = create_patient(
+            db=db,
+            patient_code="DEMO-P001",
+            display_name="Synthetic Demo Patient"
+        )
 
-                            st.error(
-                                "Task rejected by human reviewer."
-                            )
+        due_date = None
 
-                            st.session_state[
-                                "task_status"
-                            ] = "REJECTED"
+        if task_proposal.due_date:
 
+            from datetime import date
+
+            due_date = date.fromisoformat(
+                task_proposal.due_date
+            )
+
+        task = create_care_task(
+            db=db,
+            patient_id=patient.id,
+            title=task_proposal.title,
+            description=task_proposal.description,
+            due_date=due_date,
+            priority=task_proposal.priority,
+            created_by_agent="Care Coordinator Agent"
+        )
+
+        approved_task = approve_care_task(
+            db=db,
+            task_id=task.id,
+            approved_by="Human Reviewer"
+        )
+
+        st.success(
+            f"✅ Task approved and saved to database. "
+            f"Task ID: {approved_task.id}"
+        )
+
+        st.session_state[
+            "task_status"
+        ] = "APPROVED"
+
+    finally:
+
+        db.close()
+
+
+if reject:
+
+    db = SessionLocal()
+
+    try:
+
+        patient = create_patient(
+            db=db,
+            patient_code="DEMO-P001",
+            display_name="Synthetic Demo Patient"
+        )
+
+        due_date = None
+
+        if task_proposal.due_date:
+
+            from datetime import date
+
+            due_date = date.fromisoformat(
+                task_proposal.due_date
+            )
+
+        task = create_care_task(
+            db=db,
+            patient_id=patient.id,
+            title=task_proposal.title,
+            description=task_proposal.description,
+            due_date=due_date,
+            priority=task_proposal.priority,
+            created_by_agent="Care Coordinator Agent"
+        )
+
+        rejected_task = reject_care_task(
+            db=db,
+            task_id=task.id,
+            rejected_by="Human Reviewer"
+        )
+
+        st.error(
+            f"❌ Task rejected and recorded. "
+            f"Task ID: {rejected_task.id}"
+        )
+
+        st.session_state[
+            "task_status"
+        ] = "REJECTED"
+
+    finally:
+
+        db.close()
                 finally:
 
                     try:
@@ -437,3 +519,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+from tools.document_tools import extract_text_from_file
+from database.database import SessionLocal
+from tools.database_tools import (
+    create_patient,
+    create_care_task,
+    approve_care_task,
+    reject_care_task,
+)
