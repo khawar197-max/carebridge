@@ -7,6 +7,7 @@ import streamlit as st
 from crews.carebridge_crew import CareBridgeCrew
 from tools.document_tools import extract_text_from_file
 from database.database import SessionLocal
+from database.init_db import init_database
 from tools.database_tools import (
     create_patient,
     create_care_task,
@@ -24,6 +25,7 @@ st.set_page_config(
 
 def main():
 
+    init_database()
     # ---------------------------------------------------------
     # SESSION STATE
     # ---------------------------------------------------------
