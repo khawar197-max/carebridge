@@ -108,7 +108,7 @@ def main():
         height=150
     )
 
-        # -----------------------------------------------------
+    # -----------------------------------------------------
     # AUTOMATIC TRUSTED KNOWLEDGE RETRIEVAL
     # -----------------------------------------------------
 
@@ -146,48 +146,7 @@ def main():
                 "CareBridge will not treat uploaded patient "
                 "documents as trusted knowledge."
             )
-    # -----------------------------------------------------
-    # TRUSTED KNOWLEDGE / RAG
-    # -----------------------------------------------------
 
-    st.subheader(
-        "📚 Trusted Knowledge"
-    )
-
-    knowledge_query = st.text_input(
-        "Ask about appointment coordination",
-        placeholder=(
-            "Example: What should a patient bring "
-            "to an appointment?"
-        )
-    )
-
-    if knowledge_query:
-
-        knowledge_results = retrieve_knowledge(
-            knowledge_query
-        )
-
-        if knowledge_results:
-
-            st.success(
-                "Relevant trusted knowledge found."
-            )
-
-            for result in knowledge_results:
-
-                with st.expander(
-                    "📖 Trusted Knowledge Source"
-                ):
-
-                    st.text(result)
-
-        else:
-
-            st.info(
-                "No relevant information was found "
-                "in the trusted knowledge base."
-            )
     # -----------------------------------------------------
     # DOCUMENT UPLOAD
     # -----------------------------------------------------
