@@ -206,7 +206,7 @@ def main():
 
                     # Generate grounded response only when
                     # trusted knowledge was retrieved.
-                                        if rag_results:
+                    if rag_results:
 
                         st.session_state.grounded_response = (
                             crew.generate_grounded_response(
@@ -251,6 +251,10 @@ def main():
                     else:
 
                         st.session_state.grounded_response = None
+
+            # -------------------------------------------------
+            # DOCUMENT AGENT
+            # -------------------------------------------------
 
             # -------------------------------------------------
             # DOCUMENT AGENT
