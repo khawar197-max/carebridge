@@ -221,7 +221,7 @@ def main():
 
             crew = CareBridgeCrew()
 
-            # -------------------------------------------------
+                        # -------------------------------------------------
             # INTAKE AGENT
             # -------------------------------------------------
 
@@ -234,10 +234,11 @@ def main():
                     st.session_state.intake_result = (
                         crew.process_request(
                             user_message,
-                            trusted_context="\n\n".join(rag_results)
-                )
+                            trusted_context="\n\n".join(
+                                rag_results
+                            )
+                        )
                     )
-
             # -------------------------------------------------
             # DOCUMENT AGENT
             # -------------------------------------------------
