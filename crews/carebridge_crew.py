@@ -6,6 +6,8 @@ from agents.care_coordinator_agent import CareCoordinatorAgent
 from agents.safety_agent import SafetyAgent
 from agents.grounded_response_agent import GroundedResponseAgent
 from agents.memory_agent import MemoryAgent
+from database.database import SessionLocal
+from tools.memory_tools import get_patient_memories
 
 class CareBridgeCrew:
 
@@ -117,3 +119,31 @@ class CareBridgeCrew:
             query=query,
             memories=memories
         )
+
+    # -----------------------------------------
+    # PERSISTENT MEMORY
+    # -----------------------------------------
+
+    def retrieve_patient_memory(
+        self,
+        query: str,
+        patient_id: int,
+    ):
+
+        db = SessionLocal()
+
+        try:
+
+            memories = get_patient_memories(
+                db=db,
+                patient_id=patient_id,
+            )
+
+            return self.memory_agent.retrieve(
+                query=query,
+                memories=memories,
+            )
+
+        finally:
+
+            db.close()
