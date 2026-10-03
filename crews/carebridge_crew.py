@@ -5,7 +5,7 @@ from agents.document_agent import DocumentAgent
 from agents.care_coordinator_agent import CareCoordinatorAgent
 from agents.safety_agent import SafetyAgent
 from agents.grounded_response_agent import GroundedResponseAgent
-
+from agents.memory_agent import MemoryAgent
 
 class CareBridgeCrew:
 
@@ -31,6 +31,9 @@ class CareBridgeCrew:
         self.grounded_response_agent = GroundedResponseAgent(
             llm=self.llm
         )
+        self.memory_agent = MemoryAgent(
+            llm=self.llm
+        )        
     # -----------------------------------------
     # INTAKE AGENT
     # -----------------------------------------
@@ -61,9 +64,6 @@ class CareBridgeCrew:
             trusted_context=trusted_context
         )
 
-    # -----------------------------------------
-    # DOCUMENT AGENT
-    # -----------------------------------------
     # -----------------------------------------
     # DOCUMENT AGENT
     # -----------------------------------------
@@ -102,4 +102,18 @@ class CareBridgeCrew:
         return self.safety_agent.analyze(
             text
         )
-        
+
+    # -----------------------------------------
+    # MEMORY AGENT
+    # -----------------------------------------
+
+    def retrieve_memory(
+        self,
+        query: str,
+        memories: list[str]
+    ):
+
+        return self.memory_agent.retrieve(
+            query=query,
+            memories=memories
+        )
