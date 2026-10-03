@@ -224,24 +224,41 @@ def main():
 
             crew = CareBridgeCrew()
 
-                        # -------------------------------------------------
-            # INTAKE AGENT
             # -------------------------------------------------
+# INTAKE AGENT + GROUNDED RESPONSE
+# -------------------------------------------------
 
-            if user_message.strip():
+if user_message.strip():
 
-                with st.spinner(
-                    "CareBridge is analyzing your request..."
-                ):
+    with st.spinner(
+        "CareBridge is analyzing your request..."
+    ):
 
-                    st.session_state.intake_result = (
-                        crew.process_request(
-                            user_message,
-                            trusted_context="\n\n".join(
-                                rag_results
-                            )
-                        )
-                    )
+        trusted_context = "\n\n".join(
+            rag_results
+        )
+
+        st.session_state.intake_result = (
+            crew.process_request(
+                user_message,
+                trusted_context=trusted_context
+            )
+        )
+
+        # Generate grounded response only when
+        # trusted knowledge was retrieved.
+        if rag_results:
+
+            st.session_state.grounded_response = (
+                crew.generate_grounded_response(
+                    user_question=user_message,
+                    trusted_context=trusted_context
+                )
+            )
+
+        else:
+
+            st.session_state.grounded_response = None
             # -------------------------------------------------
             # DOCUMENT AGENT
             # -------------------------------------------------
