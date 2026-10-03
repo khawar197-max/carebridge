@@ -15,7 +15,7 @@ from tools.database_tools import (
     reject_care_task,
 )
 
-
+from tools.audit_tools import log_agent_action
 st.set_page_config(
     page_title="CareBridge",
     page_icon="🏥",
@@ -566,11 +566,23 @@ def main():
                         )
                     )
 
-                    approved_task = approve_care_task(
-                        db=db,
-                        task_id=task.id,
-                        approved_by="Human Reviewer"
-                    )
+approved_task = approve_care_task(
+    db=db,
+    task_id=task.id,
+    approved_by="Human Reviewer"
+)
+
+log_agent_action(
+    db=db,
+    agent_name="Human Reviewer",
+    action="TASK_APPROVED",
+    patient_id=patient.id,
+    input_reference=f"Task ID: {task.id}",
+    output_reference=(
+        f"Approved Task ID: {approved_task.id}"
+    ),
+    approval_status="APPROVED",
+)
 
                     st.session_state.task_status = (
                         "APPROVED"
