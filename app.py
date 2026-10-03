@@ -369,10 +369,11 @@ def main():
                         st.session_state.task_proposal = None
 
 
-                    # Reset previous task state
+                                      # Reset previous task state
                     st.session_state.task_status = None
                     st.session_state.task_id = None
-                                    finally:
+
+                finally:
 
                     try:
 
@@ -392,6 +393,7 @@ def main():
             st.caption(
                 f"Technical details: {e}"
             )
+         
     # =====================================================
     # DISPLAY INTAKE RESULT
     # =====================================================
