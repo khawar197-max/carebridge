@@ -206,51 +206,51 @@ def main():
 
                     # Generate grounded response only when
                     # trusted knowledge was retrieved.
-                    if rag_results:
+                                        if rag_results:
 
-    st.session_state.grounded_response = (
-        crew.generate_grounded_response(
-            user_question=user_message,
-            trusted_context=trusted_context
-        )
-    )
+                        st.session_state.grounded_response = (
+                            crew.generate_grounded_response(
+                                user_question=user_message,
+                                trusted_context=trusted_context
+                            )
+                        )
 
-    grounded = (
-        st.session_state.grounded_response
-    )
+                        grounded = (
+                            st.session_state.grounded_response
+                        )
 
-    # Record grounded response generation
-    db = SessionLocal()
+                        # Record grounded response generation
+                        db = SessionLocal()
 
-    try:
+                        try:
 
-        source_text = ", ".join(
-            grounded.sources
-        )
+                            source_text = ", ".join(
+                                grounded.sources
+                            )
 
-        log_agent_action(
-            db=db,
-            agent_name="Grounded Response Agent",
-            action="GROUNDED_RESPONSE_GENERATED",
-            input_reference=user_message,
-            output_reference=(
-                f"Grounded: {grounded.grounded}; "
-                f"Sources: {source_text}"
-            ),
-            approval_status=(
-                "HUMAN_REVIEW_REQUIRED"
-                if grounded.requires_human_review
-                else "GROUNDED"
-            ),
-        )
+                            log_agent_action(
+                                db=db,
+                                agent_name="Grounded Response Agent",
+                                action="GROUNDED_RESPONSE_GENERATED",
+                                input_reference=user_message,
+                                output_reference=(
+                                    f"Grounded: {grounded.grounded}; "
+                                    f"Sources: {source_text}"
+                                ),
+                                approval_status=(
+                                    "HUMAN_REVIEW_REQUIRED"
+                                    if grounded.requires_human_review
+                                    else "GROUNDED"
+                                ),
+                            )
 
-    finally:
+                        finally:
 
-        db.close()
+                            db.close()
 
-else:
+                    else:
 
-    st.session_state.grounded_response = None
+                        st.session_state.grounded_response = None
 
             # -------------------------------------------------
             # DOCUMENT AGENT
