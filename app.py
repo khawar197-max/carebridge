@@ -106,6 +106,44 @@ def main():
     )
 
         # -----------------------------------------------------
+    # AUTOMATIC TRUSTED KNOWLEDGE RETRIEVAL
+    # -----------------------------------------------------
+
+    rag_results = []
+
+    if user_message and user_message.strip():
+
+        rag_results = retrieve_knowledge(
+            user_message,
+            top_k=3
+        )
+
+        if rag_results:
+
+            st.subheader(
+                "📚 Trusted Knowledge Retrieved"
+            )
+
+            st.success(
+                "CareBridge found relevant information "
+                "from the approved knowledge base."
+            )
+
+            for result in rag_results:
+
+                with st.expander(
+                    "📖 Trusted Knowledge Source"
+                ):
+                    st.text(result)
+
+        else:
+
+            st.info(
+                "No relevant trusted knowledge was found. "
+                "CareBridge will not treat uploaded patient "
+                "documents as trusted knowledge."
+            )
+    # -----------------------------------------------------
     # TRUSTED KNOWLEDGE / RAG
     # -----------------------------------------------------
 
