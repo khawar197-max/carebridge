@@ -48,7 +48,7 @@ class IntakeAgent:
     def __init__(self, llm):
         self.llm = llm
 
-        def analyze(
+    def analyze(
         self,
         user_message: str,
         trusted_context: str = "",
