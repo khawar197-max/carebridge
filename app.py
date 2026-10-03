@@ -63,6 +63,9 @@ def main():
     if "safety_result" not in st.session_state:
         st.session_state.safety_result = None
 
+    if "grounded_response" not in st.session_state:
+        st.session_state.grounded_response = None
+
     if "document_text" not in st.session_state:
         st.session_state.document_text = None
 
