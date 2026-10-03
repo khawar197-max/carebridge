@@ -5,3 +5,5 @@ sqlalchemy
 langchain
 langchain-openai
 pypdf
+faiss-cpu
+sentence-transformers
