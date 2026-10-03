@@ -31,7 +31,7 @@ from tools.audit_tools import (
 st.set_page_config(
     page_title="CareBridge",
     page_icon="🏥",
-    layout="wide"
+    layout="wide",
 )
 
 
@@ -85,6 +85,11 @@ def main():
         "Privacy-First Multi-Agent AI Care Coordination System"
     )
 
+    st.caption(
+        "A hackathon prototype for privacy-aware, "
+        "human-supervised healthcare coordination."
+    )
+
     st.warning(
         "CareBridge is a hackathon prototype. "
         "It does not diagnose, prescribe, or replace "
@@ -93,11 +98,11 @@ def main():
 
     st.divider()
 
-    # -----------------------------------------------------
+    # =====================================================
     # CAREBRIDGE ASSISTANT
-    # -----------------------------------------------------
+    # =====================================================
 
-    st.header("CareBridge Assistant")
+    st.header("💬 CareBridge Assistant")
 
     user_message = st.text_area(
         "Describe your request",
@@ -105,12 +110,27 @@ def main():
             "Example: I uploaded my discharge summary "
             "and need help understanding the follow-up process."
         ),
-        height=150
+        height=150,
     )
 
-    # -----------------------------------------------------
+    # =====================================================
+    # DOCUMENT UPLOAD
+    # =====================================================
+
+    st.subheader("📄 Healthcare Document")
+
+    uploaded_file = st.file_uploader(
+        "Upload a synthetic healthcare document",
+        type=["pdf", "txt"],
+        help=(
+            "For the hackathon demo, use synthetic or "
+            "de-identified documents only."
+        ),
+    )
+
+    # =====================================================
     # AUTOMATIC TRUSTED KNOWLEDGE RETRIEVAL
-    # -----------------------------------------------------
+    # =====================================================
 
     rag_results = []
 
@@ -118,7 +138,7 @@ def main():
 
         rag_results = retrieve_knowledge(
             user_message,
-            top_k=3
+            top_k=3,
         )
 
         if rag_results:
@@ -132,11 +152,12 @@ def main():
                 "from the approved knowledge base."
             )
 
-            for result in rag_results:
+            for index, result in enumerate(rag_results, start=1):
 
                 with st.expander(
-                    "📖 Trusted Knowledge Source"
+                    f"📖 Trusted Knowledge Source {index}"
                 ):
+
                     st.text(result)
 
         else:
@@ -147,29 +168,19 @@ def main():
                 "documents as trusted knowledge."
             )
 
-    # -----------------------------------------------------
-    # DOCUMENT UPLOAD
-    # -----------------------------------------------------
-
-    st.header("📄 Healthcare Document")
-
-    uploaded_file = st.file_uploader(
-        "Upload a synthetic healthcare document",
-        type=["pdf", "txt"],
-        help=(
-            "For the hackathon demo, use synthetic or "
-            "de-identified documents only."
-        )
-    )
-
     # =====================================================
     # ANALYZE REQUEST
     # =====================================================
 
-    if st.button(
-        "Analyze Request",
-        type="primary"
-    ):
+    st.divider()
+
+    analyze_request = st.button(
+        "🔎 Analyze Request",
+        type="primary",
+        use_container_width=True,
+    )
+
+    if analyze_request:
 
         if not user_message.strip() and not uploaded_file:
 
@@ -183,9 +194,9 @@ def main():
 
             crew = CareBridgeCrew()
 
-            # -------------------------------------------------
+            # =================================================
             # INTAKE AGENT + GROUNDED RESPONSE
-            # -------------------------------------------------
+            # =================================================
 
             if user_message.strip():
 
@@ -200,18 +211,20 @@ def main():
                     st.session_state.intake_result = (
                         crew.process_request(
                             user_message,
-                            trusted_context=trusted_context
+                            trusted_context=trusted_context,
                         )
                     )
 
-                    # Generate grounded response only when
-                    # trusted knowledge was retrieved.
+                    # -----------------------------------------
+                    # GROUNDED RESPONSE
+                    # -----------------------------------------
+
                     if rag_results:
 
                         st.session_state.grounded_response = (
                             crew.generate_grounded_response(
                                 user_question=user_message,
-                                trusted_context=trusted_context
+                                trusted_context=trusted_context,
                             )
                         )
 
@@ -219,7 +232,10 @@ def main():
                             st.session_state.grounded_response
                         )
 
-                        # Record grounded response generation
+                        # -------------------------------------
+                        # AUDIT GROUNDED RESPONSE
+                        # -------------------------------------
+
                         db = SessionLocal()
 
                         try:
@@ -234,8 +250,10 @@ def main():
                                 action="GROUNDED_RESPONSE_GENERATED",
                                 input_reference=user_message,
                                 output_reference=(
-                                    f"Grounded: {grounded.grounded}; "
-                                    f"Sources: {source_text}"
+                                    f"Grounded: "
+                                    f"{grounded.grounded}; "
+                                    f"Sources: "
+                                    f"{source_text}"
                                 ),
                                 approval_status=(
                                     "HUMAN_REVIEW_REQUIRED"
@@ -252,13 +270,9 @@ def main():
 
                         st.session_state.grounded_response = None
 
-            # -------------------------------------------------
+            # =================================================
             # DOCUMENT AGENT
-            # -------------------------------------------------
-
-            # -------------------------------------------------
-            # DOCUMENT AGENT
-            # -------------------------------------------------
+            # =================================================
 
             if uploaded_file:
 
@@ -268,7 +282,7 @@ def main():
 
                 with tempfile.NamedTemporaryFile(
                     delete=False,
-                    suffix=file_suffix
+                    suffix=file_suffix,
                 ) as temp_file:
 
                     temp_file.write(
@@ -278,6 +292,10 @@ def main():
                     temp_path = temp_file.name
 
                 try:
+
+                    # -----------------------------------------
+                    # EXTRACT DOCUMENT TEXT
+                    # -----------------------------------------
 
                     with st.spinner(
                         "Extracting document text..."
@@ -305,9 +323,6 @@ def main():
                     # -----------------------------------------
                     # MEDICAL DOCUMENT AGENT
                     # -----------------------------------------
-                     # -----------------------------------------
-                    # MEDICAL DOCUMENT AGENT
-                    # -----------------------------------------
 
                     with st.spinner(
                         "Medical Document Agent is analyzing..."
@@ -322,7 +337,6 @@ def main():
                     document_result = (
                         st.session_state.document_result
                     )
-
 
                     # -----------------------------------------
                     # AUDIT: MEDICAL DOCUMENT AGENT
@@ -355,7 +369,6 @@ def main():
 
                         audit_db.close()
 
-
                     # -----------------------------------------
                     # SAFETY & ESCALATION AGENT
                     # -----------------------------------------
@@ -373,7 +386,6 @@ def main():
                     st.session_state.safety_result = (
                         safety_result
                     )
-
 
                     # -----------------------------------------
                     # AUDIT: SAFETY AGENT
@@ -408,7 +420,6 @@ def main():
 
                         audit_db.close()
 
-
                     # -----------------------------------------
                     # CARE COORDINATOR AGENT
                     # -----------------------------------------
@@ -433,10 +444,9 @@ def main():
                             st.session_state.task_proposal
                         )
 
-
-                        # -----------------------------------------
-                        # AUDIT: CARE COORDINATOR AGENT
-                        # -----------------------------------------
+                        # -------------------------------------
+                        # AUDIT: CARE COORDINATOR
+                        # -------------------------------------
 
                         audit_db = SessionLocal()
 
@@ -471,8 +481,10 @@ def main():
 
                         st.session_state.task_proposal = None
 
+                    # -----------------------------------------
+                    # RESET HUMAN REVIEW STATE
+                    # -----------------------------------------
 
-                                      # Reset previous task state
                     st.session_state.task_status = None
                     st.session_state.task_id = None
 
@@ -489,16 +501,15 @@ def main():
         except Exception as e:
 
             st.error(
-                "CareBridge could not process "
-                "the request."
+                "CareBridge could not process the request."
             )
 
             st.caption(
                 f"Technical details: {e}"
             )
-         
+
     # =====================================================
-    # DISPLAY INTAKE RESULT
+    # DISPLAY: INTAKE RESULT
     # =====================================================
 
     if st.session_state.intake_result:
@@ -507,12 +518,14 @@ def main():
             st.session_state.intake_result
         )
 
-        st.success(
-            "Request analyzed successfully."
-        )
+        st.divider()
 
         st.subheader(
-            "🧭 Intake Agent Result"
+            "🧭 Intake & Triage Agent"
+        )
+
+        st.success(
+            "Request analyzed successfully."
         )
 
         col1, col2 = st.columns(2)
@@ -521,30 +534,45 @@ def main():
 
             st.metric(
                 "Intent",
-                intake_result.intent
+                intake_result.intent,
             )
 
         with col2:
 
             st.metric(
                 "Urgency",
-                intake_result.urgency
+                intake_result.urgency,
             )
 
         st.write(
             "**Required Agents:**"
         )
 
-        for agent in intake_result.required_agents:
+        if intake_result.required_agents:
+
+            for agent in intake_result.required_agents:
+
+                st.write(
+                    f"• {agent}"
+                )
+
+        else:
 
             st.write(
-                f"• {agent}"
+                "No additional agents required."
             )
 
         st.write(
-            "**Human Review Required:**",
-            intake_result.requires_human_review
+            "**Human Review Required:**"
         )
+
+        if intake_result.requires_human_review:
+
+            st.warning("YES")
+
+        else:
+
+            st.success("NO")
 
         st.write(
             "**Reason:**"
@@ -555,49 +583,54 @@ def main():
         )
 
     # =====================================================
-# DISPLAY GROUNDED AI RESPONSE
-# =====================================================
+    # DISPLAY: GROUNDED AI RESPONSE
+    # =====================================================
 
-if st.session_state.get("grounded_response"):
+    if st.session_state.get("grounded_response"):
 
-    grounded = (
-        st.session_state.grounded_response
-    )
-
-    st.divider()
-
-    st.subheader(
-        "🤖 Grounded AI Response"
-    )
-
-    if grounded.grounded:
-        st.success(
-            grounded.answer
-        )
-    else:
-        st.warning(
-            grounded.answer
+        grounded = (
+            st.session_state.grounded_response
         )
 
-    if grounded.sources:
+        st.divider()
 
-        st.write(
-            "**📚 Source Attribution:**"
+        st.subheader(
+            "🤖 Grounded AI Response"
         )
 
-        for source in grounded.sources:
-            st.write(
-                f"• {source}"
+        if grounded.grounded:
+
+            st.success(
+                grounded.answer
             )
 
-    st.caption(
-        "This response was generated only from "
-        "approved CareBridge trusted knowledge. "
-        "It does not provide diagnosis, treatment, "
-        "or medication advice."
-    )
+        else:
+
+            st.warning(
+                grounded.answer
+            )
+
+        if grounded.sources:
+
+            st.write(
+                "**📚 Source Attribution:**"
+            )
+
+            for source in grounded.sources:
+
+                st.write(
+                    f"• {source}"
+                )
+
+        st.caption(
+            "This response was generated only from "
+            "approved CareBridge trusted knowledge. "
+            "It does not provide diagnosis, treatment, "
+            "or medication advice."
+        )
+
     # =====================================================
-    # DISPLAY DOCUMENT RESULT
+    # DISPLAY: MEDICAL DOCUMENT RESULT
     # =====================================================
 
     if st.session_state.document_result:
@@ -613,22 +646,18 @@ if st.session_state.get("grounded_response"):
         )
 
         st.success(
-            "Document text extracted."
+            "Document analyzed successfully."
         )
 
         if st.session_state.document_text:
 
             with st.expander(
-                "View extracted document text"
+                "📃 View extracted document text"
             ):
 
                 st.text(
                     st.session_state.document_text[:10000]
                 )
-
-        st.success(
-            "Document analyzed successfully."
-        )
 
         col1, col2, col3 = st.columns(3)
 
@@ -636,14 +665,14 @@ if st.session_state.get("grounded_response"):
 
             st.metric(
                 "Document Type",
-                document_result.document_type
+                document_result.document_type,
             )
 
         with col2:
 
             st.metric(
                 "Confidence",
-                f"{document_result.confidence:.0%}"
+                f"{document_result.confidence:.0%}",
             )
 
         with col3:
@@ -656,21 +685,36 @@ if st.session_state.get("grounded_response"):
 
             st.metric(
                 "Human Review",
-                review
+                review,
+            )
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+
+            st.write(
+                "**Document Date**"
+            )
+
+            st.write(
+                document_result.document_date
+            )
+
+        with col2:
+
+            st.write(
+                "**Follow-up Required**"
+            )
+
+            st.write(
+                document_result.follow_up_required
             )
 
         st.write(
-            "**Document Date:**",
-            document_result.document_date
+            "**Follow-up Days:**"
         )
 
         st.write(
-            "**Follow-up Required:**",
-            document_result.follow_up_required
-        )
-
-        st.write(
-            "**Follow-up Days:**",
             document_result.follow_up_days
         )
 
@@ -696,8 +740,8 @@ if st.session_state.get("grounded_response"):
                 "for care coordination."
             )
 
-        # =====================================================
-    # DISPLAY SAFETY & ESCALATION RESULT
+    # =====================================================
+    # DISPLAY: SAFETY & ESCALATION
     # =====================================================
 
     if st.session_state.safety_result:
@@ -718,14 +762,14 @@ if st.session_state.get("grounded_response"):
 
             st.metric(
                 "Status",
-                safety_result.status
+                safety_result.status,
             )
 
         with col2:
 
             st.metric(
                 "Risk Level",
-                safety_result.risk_level
+                safety_result.risk_level,
             )
 
         with col3:
@@ -738,7 +782,7 @@ if st.session_state.get("grounded_response"):
 
             st.metric(
                 "Human Review",
-                review
+                review,
             )
 
         st.write(
@@ -772,8 +816,9 @@ if st.session_state.get("grounded_response"):
             st.error(
                 safety_result.recommended_action
             )
+
     # =====================================================
-    # CARE COORDINATOR
+    # DISPLAY: CARE COORDINATOR
     # =====================================================
 
     if st.session_state.task_proposal:
@@ -851,7 +896,7 @@ if st.session_state.get("grounded_response"):
         st.divider()
 
         st.subheader(
-            "Human Review"
+            "👤 Human Review"
         )
 
         # -------------------------------------------------
@@ -903,14 +948,16 @@ if st.session_state.get("grounded_response"):
                 approve = st.button(
                     "✅ Approve Task",
                     type="primary",
-                    key="approve_task"
+                    key="approve_task",
+                    use_container_width=True,
                 )
 
             with col2:
 
                 reject = st.button(
                     "❌ Reject Task",
-                    key="reject_task"
+                    key="reject_task",
+                    use_container_width=True,
                 )
 
             # =============================================
@@ -930,7 +977,7 @@ if st.session_state.get("grounded_response"):
                     patient = create_patient(
                         db=db,
                         patient_code="DEMO-P001",
-                        display_name="Synthetic Demo Patient"
+                        display_name="Synthetic Demo Patient",
                     )
 
                     # -------------------------------------
@@ -958,7 +1005,7 @@ if st.session_state.get("grounded_response"):
                         priority=task_proposal.priority,
                         created_by_agent=(
                             "Care Coordinator Agent"
-                        )
+                        ),
                     )
 
                     # -------------------------------------
@@ -968,7 +1015,7 @@ if st.session_state.get("grounded_response"):
                     approved_task = approve_care_task(
                         db=db,
                         task_id=task.id,
-                        approved_by="Human Reviewer"
+                        approved_by="Human Reviewer",
                     )
 
                     # -------------------------------------
@@ -1025,7 +1072,7 @@ if st.session_state.get("grounded_response"):
                     patient = create_patient(
                         db=db,
                         patient_code="DEMO-P001",
-                        display_name="Synthetic Demo Patient"
+                        display_name="Synthetic Demo Patient",
                     )
 
                     # -------------------------------------
@@ -1053,7 +1100,7 @@ if st.session_state.get("grounded_response"):
                         priority=task_proposal.priority,
                         created_by_agent=(
                             "Care Coordinator Agent"
-                        )
+                        ),
                     )
 
                     # -------------------------------------
@@ -1063,7 +1110,7 @@ if st.session_state.get("grounded_response"):
                     rejected_task = reject_care_task(
                         db=db,
                         task_id=task.id,
-                        rejected_by="Human Reviewer"
+                        rejected_by="Human Reviewer",
                     )
 
                     # -------------------------------------
@@ -1103,24 +1150,19 @@ if st.session_state.get("grounded_response"):
 
                 st.rerun()
 
-    
-# =========================================================
-# APPLICATION ENTRY POINT
-# =========================================================
-
-if __name__ == "__main__":
-    main()
     # =====================================================
     # AUDIT & TRACEABILITY DASHBOARD
     # =====================================================
 
     st.divider()
 
-    st.header("🔍 Audit & Traceability")
+    st.header(
+        "🔍 Audit & Traceability"
+    )
 
     st.caption(
-        "This section shows recorded CareBridge actions "
-        "for traceability and human oversight."
+        "Recorded CareBridge actions for traceability, "
+        "human oversight, and accountability."
     )
 
     db = SessionLocal()
@@ -1138,7 +1180,8 @@ if __name__ == "__main__":
         else:
 
             st.write(
-                f"**Total audit events:** {len(audit_history)}"
+                f"**Total audit events:** "
+                f"{len(audit_history)}"
             )
 
             for audit in audit_history:
@@ -1184,21 +1227,32 @@ if __name__ == "__main__":
                     if audit.patient_id:
 
                         st.write(
-                            f"Patient ID: {audit.patient_id}"
+                            f"Patient ID: "
+                            f"{audit.patient_id}"
                         )
 
                     if audit.input_reference:
 
                         st.write(
-                            f"Input: {audit.input_reference}"
+                            f"Input: "
+                            f"{audit.input_reference}"
                         )
 
                     if audit.output_reference:
 
                         st.write(
-                            f"Output: {audit.output_reference}"
+                            f"Output: "
+                            f"{audit.output_reference}"
                         )
 
     finally:
 
         db.close()
+
+
+# =========================================================
+# APPLICATION ENTRY POINT
+# =========================================================
+
+if __name__ == "__main__":
+    main()
