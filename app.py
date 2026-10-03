@@ -17,7 +17,10 @@ from tools.database_tools import (
     reject_care_task,
 )
 
-from tools.audit_tools import log_agent_action
+from tools.audit_tools import (
+    log_agent_action,
+    get_audit_history,
+)
 
 
 # =========================================================
@@ -749,7 +752,101 @@ def main():
                     db.close()
 
                 st.rerun()
+def main():
 
+    ...
+    # =====================================================
+    # AUDIT & TRACEABILITY DASHBOARD
+    # =====================================================
+
+    st.divider()
+
+    st.header("🔍 Audit & Traceability")
+
+    st.caption(
+        "This section shows recorded CareBridge actions "
+        "for traceability and human oversight."
+    )
+
+    db = SessionLocal()
+
+    try:
+
+        audit_history = get_audit_history(db)
+
+        if not audit_history:
+
+            st.info(
+                "No audit events have been recorded yet."
+            )
+
+        else:
+
+            st.write(
+                f"**Total audit events:** {len(audit_history)}"
+            )
+
+            for audit in audit_history:
+
+                with st.container(border=True):
+
+                    col1, col2, col3 = st.columns(3)
+
+                    with col1:
+
+                        st.write(
+                            "**Actor / Agent**"
+                        )
+
+                        st.write(
+                            audit.agent_name or "Unknown"
+                        )
+
+                    with col2:
+
+                        st.write(
+                            "**Action**"
+                        )
+
+                        st.write(
+                            audit.action
+                        )
+
+                    with col3:
+
+                        st.write(
+                            "**Approval Status**"
+                        )
+
+                        st.write(
+                            audit.approval_status or "N/A"
+                        )
+
+                    st.caption(
+                        f"Timestamp: {audit.timestamp}"
+                    )
+
+                    if audit.patient_id:
+
+                        st.write(
+                            f"Patient ID: {audit.patient_id}"
+                        )
+
+                    if audit.input_reference:
+
+                        st.write(
+                            f"Input: {audit.input_reference}"
+                        )
+
+                    if audit.output_reference:
+
+                        st.write(
+                            f"Output: {audit.output_reference}"
+                        )
+
+    finally:
+
+        db.close()
 
 # =========================================================
 # APPLICATION ENTRY POINT
