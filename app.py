@@ -6,8 +6,10 @@ import streamlit as st
 
 from crews.carebridge_crew import CareBridgeCrew
 from tools.document_tools import extract_text_from_file
+
 from database.database import SessionLocal
 from database.init_db import init_database
+
 from tools.database_tools import (
     create_patient,
     create_care_task,
@@ -16,6 +18,12 @@ from tools.database_tools import (
 )
 
 from tools.audit_tools import log_agent_action
+
+
+# =========================================================
+# PAGE CONFIGURATION
+# =========================================================
+
 st.set_page_config(
     page_title="CareBridge",
     page_icon="🏥",
@@ -23,12 +31,21 @@ st.set_page_config(
 )
 
 
+# =========================================================
+# MAIN APPLICATION
+# =========================================================
+
 def main():
 
+    # -----------------------------------------------------
+    # INITIALIZE DATABASE
+    # -----------------------------------------------------
+
     init_database()
-    # ---------------------------------------------------------
+
+    # -----------------------------------------------------
     # SESSION STATE
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     if "intake_result" not in st.session_state:
         st.session_state.intake_result = None
@@ -39,8 +56,8 @@ def main():
     if "task_proposal" not in st.session_state:
         st.session_state.task_proposal = None
 
-    if "workflow_completed" not in st.session_state:
-        st.session_state.workflow_completed = False
+    if "document_text" not in st.session_state:
+        st.session_state.document_text = None
 
     if "task_status" not in st.session_state:
         st.session_state.task_status = None
@@ -48,12 +65,9 @@ def main():
     if "task_id" not in st.session_state:
         st.session_state.task_id = None
 
-    if "document_text" not in st.session_state:
-        st.session_state.document_text = None
-
-    # ---------------------------------------------------------
-    # PAGE HEADER
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
+    # HEADER
+    # -----------------------------------------------------
 
     st.title("🏥 CareBridge")
 
@@ -69,9 +83,9 @@ def main():
 
     st.divider()
 
-    # ---------------------------------------------------------
-    # USER REQUEST
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
+    # CAREBRIDGE ASSISTANT
+    # -----------------------------------------------------
 
     st.header("CareBridge Assistant")
 
@@ -84,9 +98,9 @@ def main():
         height=150
     )
 
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
     # DOCUMENT UPLOAD
-    # ---------------------------------------------------------
+    # -----------------------------------------------------
 
     st.header("📄 Healthcare Document")
 
@@ -99,9 +113,9 @@ def main():
         )
     )
 
-    # ---------------------------------------------------------
-    # ANALYZE REQUEST BUTTON
-    # ---------------------------------------------------------
+    # =====================================================
+    # ANALYZE REQUEST
+    # =====================================================
 
     if st.button(
         "Analyze Request",
@@ -182,6 +196,10 @@ def main():
                         document_text
                     )
 
+                    # -----------------------------------------
+                    # MEDICAL DOCUMENT AGENT
+                    # -----------------------------------------
+
                     with st.spinner(
                         "Medical Document Agent is analyzing..."
                     ):
@@ -192,13 +210,13 @@ def main():
                             )
                         )
 
-                    # -----------------------------------------
-                    # CARE COORDINATOR
-                    # -----------------------------------------
-
                     document_result = (
                         st.session_state.document_result
                     )
+
+                    # -----------------------------------------
+                    # CARE COORDINATOR AGENT
+                    # -----------------------------------------
 
                     if (
                         document_result.follow_up_required
@@ -215,7 +233,11 @@ def main():
                                 )
                             )
 
-                    st.session_state.workflow_completed = False
+                    else:
+
+                        st.session_state.task_proposal = None
+
+                    # Reset previous task state
                     st.session_state.task_status = None
                     st.session_state.task_id = None
 
@@ -240,9 +262,9 @@ def main():
                 f"Technical details: {e}"
             )
 
-    # =========================================================
+    # =====================================================
     # DISPLAY INTAKE RESULT
-    # =========================================================
+    # =====================================================
 
     if st.session_state.intake_result:
 
@@ -297,9 +319,9 @@ def main():
             intake_result.reason
         )
 
-    # =========================================================
+    # =====================================================
     # DISPLAY DOCUMENT RESULT
-    # =========================================================
+    # =====================================================
 
     if st.session_state.document_result:
 
@@ -397,9 +419,9 @@ def main():
                 "for care coordination."
             )
 
-    # =========================================================
-    # CARE COORDINATOR RESULT
-    # =========================================================
+    # =====================================================
+    # CARE COORDINATOR
+    # =====================================================
 
     if st.session_state.task_proposal:
 
@@ -469,9 +491,9 @@ def main():
             task_proposal.reason
         )
 
-        # =====================================================
+        # =================================================
         # HUMAN REVIEW
-        # =====================================================
+        # =================================================
 
         st.divider()
 
@@ -479,9 +501,9 @@ def main():
             "Human Review"
         )
 
-        # -----------------------------------------------------
-        # ALREADY APPROVED
-        # -----------------------------------------------------
+        # -------------------------------------------------
+        # APPROVED STATE
+        # -------------------------------------------------
 
         if st.session_state.task_status == "APPROVED":
 
@@ -493,9 +515,13 @@ def main():
                 f"Task ID: {st.session_state.task_id}"
             )
 
-        # -----------------------------------------------------
-        # ALREADY REJECTED
-        # -----------------------------------------------------
+            st.info(
+                "Audit record created: TASK_APPROVED"
+            )
+
+        # -------------------------------------------------
+        # REJECTED STATE
+        # -------------------------------------------------
 
         elif st.session_state.task_status == "REJECTED":
 
@@ -507,9 +533,13 @@ def main():
                 f"Task ID: {st.session_state.task_id}"
             )
 
-        # -----------------------------------------------------
+            st.info(
+                "Audit record created: TASK_REJECTED"
+            )
+
+        # -------------------------------------------------
         # WAITING FOR HUMAN REVIEW
-        # -----------------------------------------------------
+        # -------------------------------------------------
 
         else:
 
@@ -530,9 +560,9 @@ def main():
                     key="reject_task"
                 )
 
-            # -------------------------------------------------
-            # APPROVE
-            # -------------------------------------------------
+            # =============================================
+            # APPROVE TASK
+            # =============================================
 
             if approve:
 
@@ -540,11 +570,19 @@ def main():
 
                 try:
 
+                    # -------------------------------------
+                    # GET OR CREATE DEMO PATIENT
+                    # -------------------------------------
+
                     patient = create_patient(
                         db=db,
                         patient_code="DEMO-P001",
                         display_name="Synthetic Demo Patient"
                     )
+
+                    # -------------------------------------
+                    # CONVERT DUE DATE
+                    # -------------------------------------
 
                     due_date = None
 
@@ -553,6 +591,10 @@ def main():
                         due_date = date.fromisoformat(
                             task_proposal.due_date
                         )
+
+                    # -------------------------------------
+                    # CREATE PROPOSED TASK
+                    # -------------------------------------
 
                     task = create_care_task(
                         db=db,
@@ -566,23 +608,38 @@ def main():
                         )
                     )
 
-approved_task = approve_care_task(
-    db=db,
-    task_id=task.id,
-    approved_by="Human Reviewer"
-)
+                    # -------------------------------------
+                    # HUMAN APPROVAL
+                    # -------------------------------------
 
-log_agent_action(
-    db=db,
-    agent_name="Human Reviewer",
-    action="TASK_APPROVED",
-    patient_id=patient.id,
-    input_reference=f"Task ID: {task.id}",
-    output_reference=(
-        f"Approved Task ID: {approved_task.id}"
-    ),
-    approval_status="APPROVED",
-)
+                    approved_task = approve_care_task(
+                        db=db,
+                        task_id=task.id,
+                        approved_by="Human Reviewer"
+                    )
+
+                    # -------------------------------------
+                    # AUDIT LOG
+                    # -------------------------------------
+
+                    log_agent_action(
+                        db=db,
+                        agent_name="Human Reviewer",
+                        action="TASK_APPROVED",
+                        patient_id=patient.id,
+                        input_reference=(
+                            f"Task ID: {task.id}"
+                        ),
+                        output_reference=(
+                            f"Approved Task ID: "
+                            f"{approved_task.id}"
+                        ),
+                        approval_status="APPROVED",
+                    )
+
+                    # -------------------------------------
+                    # SAVE STATE
+                    # -------------------------------------
 
                     st.session_state.task_status = (
                         "APPROVED"
@@ -592,19 +649,15 @@ log_agent_action(
                         approved_task.id
                     )
 
-                    st.session_state.workflow_completed = (
-                        True
-                    )
-
-                    st.rerun()
-
                 finally:
 
                     db.close()
 
-            # -------------------------------------------------
-            # REJECT
-            # -------------------------------------------------
+                st.rerun()
+
+            # =============================================
+            # REJECT TASK
+            # =============================================
 
             if reject:
 
@@ -612,11 +665,19 @@ log_agent_action(
 
                 try:
 
+                    # -------------------------------------
+                    # GET OR CREATE DEMO PATIENT
+                    # -------------------------------------
+
                     patient = create_patient(
                         db=db,
                         patient_code="DEMO-P001",
                         display_name="Synthetic Demo Patient"
                     )
+
+                    # -------------------------------------
+                    # CONVERT DUE DATE
+                    # -------------------------------------
 
                     due_date = None
 
@@ -625,6 +686,10 @@ log_agent_action(
                         due_date = date.fromisoformat(
                             task_proposal.due_date
                         )
+
+                    # -------------------------------------
+                    # CREATE PROPOSED TASK
+                    # -------------------------------------
 
                     task = create_care_task(
                         db=db,
@@ -638,11 +703,38 @@ log_agent_action(
                         )
                     )
 
+                    # -------------------------------------
+                    # HUMAN REJECTION
+                    # -------------------------------------
+
                     rejected_task = reject_care_task(
                         db=db,
                         task_id=task.id,
                         rejected_by="Human Reviewer"
                     )
+
+                    # -------------------------------------
+                    # AUDIT LOG
+                    # -------------------------------------
+
+                    log_agent_action(
+                        db=db,
+                        agent_name="Human Reviewer",
+                        action="TASK_REJECTED",
+                        patient_id=patient.id,
+                        input_reference=(
+                            f"Task ID: {task.id}"
+                        ),
+                        output_reference=(
+                            f"Rejected Task ID: "
+                            f"{rejected_task.id}"
+                        ),
+                        approval_status="REJECTED",
+                    )
+
+                    # -------------------------------------
+                    # SAVE STATE
+                    # -------------------------------------
 
                     st.session_state.task_status = (
                         "REJECTED"
@@ -652,16 +744,16 @@ log_agent_action(
                         rejected_task.id
                     )
 
-                    st.session_state.workflow_completed = (
-                        True
-                    )
-
-                    st.rerun()
-
                 finally:
 
                     db.close()
 
+                st.rerun()
+
+
+# =========================================================
+# APPLICATION ENTRY POINT
+# =========================================================
 
 if __name__ == "__main__":
     main()
