@@ -3,16 +3,18 @@ from config import get_llm
 from agents.intake_agent import IntakeAgent
 from agents.document_agent import DocumentAgent
 from agents.care_coordinator_agent import CareCoordinatorAgent
+from agents.safety_agent import SafetyAgent
 
 
 class CareBridgeCrew:
-    """
-    Main CareBridge agent coordinator.
-    """
 
     def __init__(self):
 
         self.llm = get_llm()
+
+        # -----------------------------------------
+        # CAREBRIDGE AGENTS
+        # -----------------------------------------
 
         self.intake_agent = IntakeAgent(
             llm=self.llm
@@ -22,9 +24,19 @@ class CareBridgeCrew:
             llm=self.llm
         )
 
-        self.care_coordinator_agent = CareCoordinatorAgent(
+        self.care_coordinator_agent = (
+            CareCoordinatorAgent(
+                llm=self.llm
+            )
+        )
+
+        self.safety_agent = SafetyAgent(
             llm=self.llm
         )
+
+    # -----------------------------------------
+    # INTAKE AGENT
+    # -----------------------------------------
 
     def process_request(
         self,
@@ -35,6 +47,10 @@ class CareBridgeCrew:
             user_message
         )
 
+    # -----------------------------------------
+    # MEDICAL DOCUMENT AGENT
+    # -----------------------------------------
+
     def analyze_document(
         self,
         document_text: str
@@ -44,6 +60,10 @@ class CareBridgeCrew:
             document_text
         )
 
+    # -----------------------------------------
+    # CARE COORDINATOR AGENT
+    # -----------------------------------------
+
     def propose_care_task(
         self,
         document_result
@@ -51,4 +71,17 @@ class CareBridgeCrew:
 
         return self.care_coordinator_agent.propose_task(
             document_result
+        )
+
+    # -----------------------------------------
+    # SAFETY & ESCALATION AGENT
+    # -----------------------------------------
+
+    def analyze_safety(
+        self,
+        text: str
+    ):
+
+        return self.safety_agent.analyze(
+            text
         )
