@@ -551,6 +551,82 @@ def main():
                 "for care coordination."
             )
 
+        # =====================================================
+    # DISPLAY SAFETY & ESCALATION RESULT
+    # =====================================================
+
+    if st.session_state.safety_result:
+
+        safety_result = (
+            st.session_state.safety_result
+        )
+
+        st.divider()
+
+        st.subheader(
+            "🛡️ Safety & Escalation Agent"
+        )
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+
+            st.metric(
+                "Status",
+                safety_result.status
+            )
+
+        with col2:
+
+            st.metric(
+                "Risk Level",
+                safety_result.risk_level
+            )
+
+        with col3:
+
+            review = (
+                "YES"
+                if safety_result.requires_human_review
+                else "NO"
+            )
+
+            st.metric(
+                "Human Review",
+                review
+            )
+
+        st.write(
+            "**Safety Reasons:**"
+        )
+
+        for reason in safety_result.reasons:
+
+            st.write(
+                f"• {reason}"
+            )
+
+        st.write(
+            "**Recommended Action:**"
+        )
+
+        if safety_result.status == "SAFE":
+
+            st.success(
+                safety_result.recommended_action
+            )
+
+        elif safety_result.status == "HUMAN_REVIEW_REQUIRED":
+
+            st.warning(
+                safety_result.recommended_action
+            )
+
+        else:
+
+            st.error(
+                safety_result.recommended_action
+            )
     # =====================================================
     # CARE COORDINATOR
     # =====================================================
