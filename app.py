@@ -48,45 +48,6 @@ def main():
     init_database()
 
     # -----------------------------------------------------
-# DEMO PATIENT MEMORY
-# -----------------------------------------------------
-
-db = SessionLocal()
-
-try:
-
-    from database.models import Memory
-
-    demo_memory = (
-        db.query(Memory)
-        .filter(
-            Memory.patient_id == 1,
-            Memory.memory_key == "preferred_follow_up"
-        )
-        .first()
-    )
-
-    if not demo_memory:
-
-        demo_memory = Memory(
-            patient_id=1,
-            memory_type="care_preference",
-            memory_key="preferred_follow_up",
-            memory_value=(
-                "Patient prefers appointment coordination "
-                "during morning hours."
-            ),
-            source="CareBridge Demo",
-            confidence=0.95,
-        )
-
-        db.add(demo_memory)
-        db.commit()
-
-finally:
-
-    db.close()
-    # -----------------------------------------------------
     # SESSION STATE
     # -----------------------------------------------------
 
