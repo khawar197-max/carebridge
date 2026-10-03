@@ -199,122 +199,143 @@ def main():
                         document_text
                     )
 
-# -----------------------------------------
-# MEDICAL DOCUMENT AGENT
-# -----------------------------------------
+                    # -----------------------------------------
+                    # MEDICAL DOCUMENT AGENT
+                    # -----------------------------------------
 
-with st.spinner(
-    "Medical Document Agent is analyzing..."
-):
+                    with st.spinner(
+                        "Medical Document Agent is analyzing..."
+                    ):
 
-    st.session_state.document_result = (
-        crew.analyze_document(
-            document_text
-        )
-    )
+                        st.session_state.document_result = (
+                            crew.analyze_document(
+                                document_text
+                            )
+                        )
 
-document_result = (
-    st.session_state.document_result
-)
-
-
-# -----------------------------------------
-# AUDIT: MEDICAL DOCUMENT AGENT
-# -----------------------------------------
-
-audit_db = SessionLocal()
-
-try:
-
-    log_agent_action(
-        db=audit_db,
-        agent_name="Medical Document Agent",
-        action="DOCUMENT_ANALYZED",
-        input_reference=(
-            f"Uploaded document: "
-            f"{uploaded_file.name}"
-        ),
-        output_reference=(
-            f"Document type: "
-            f"{document_result.document_type}; "
-            f"Confidence: "
-            f"{document_result.confidence:.0%}; "
-            f"Follow-up required: "
-            f"{document_result.follow_up_required}"
-        ),
-        approval_status="ANALYZED",
-    )
-
-finally:
-
-    audit_db.close()
+                    document_result = (
+                        st.session_state.document_result
+                    )
 
 
-# -----------------------------------------
-# CARE COORDINATOR AGENT
-# -----------------------------------------
+                    # -----------------------------------------
+                    # AUDIT: MEDICAL DOCUMENT AGENT
+                    # -----------------------------------------
 
-if (
-    document_result.follow_up_required
-    and not document_result.requires_human_review
-):
+                    audit_db = SessionLocal()
 
-    with st.spinner(
-        "Creating a care coordination proposal..."
-    ):
+                    try:
 
-        st.session_state.task_proposal = (
-            crew.propose_care_task(
-                document_result
+                        log_agent_action(
+                            db=audit_db,
+                            agent_name="Medical Document Agent",
+                            action="DOCUMENT_ANALYZED",
+                            input_reference=(
+                                f"Uploaded document: "
+                                f"{uploaded_file.name}"
+                            ),
+                            output_reference=(
+                                f"Document type: "
+                                f"{document_result.document_type}; "
+                                f"Confidence: "
+                                f"{document_result.confidence:.0%}; "
+                                f"Follow-up required: "
+                                f"{document_result.follow_up_required}"
+                            ),
+                            approval_status="ANALYZED",
+                        )
+
+                    finally:
+
+                        audit_db.close()
+
+
+                    # -----------------------------------------
+                    # CARE COORDINATOR AGENT
+                    # -----------------------------------------
+
+                    if (
+                        document_result.follow_up_required
+                        and not document_result.requires_human_review
+                    ):
+
+                        with st.spinner(
+                            "Creating a care coordination proposal..."
+                        ):
+
+                            st.session_state.task_proposal = (
+                                crew.propose_care_task(
+                                    document_result
+                                )
+                            )
+
+                        task_proposal = (
+                            st.session_state.task_proposal
+                        )
+
+
+                        # -----------------------------------------
+                        # AUDIT: CARE COORDINATOR AGENT
+                        # -----------------------------------------
+
+                        audit_db = SessionLocal()
+
+                        try:
+
+                            log_agent_action(
+                                db=audit_db,
+                                agent_name="Care Coordinator Agent",
+                                action="TASK_PROPOSED",
+                                input_reference=(
+                                    f"Document type: "
+                                    f"{document_result.document_type}"
+                                ),
+                                output_reference=(
+                                    f"Task: "
+                                    f"{task_proposal.title}; "
+                                    f"Priority: "
+                                    f"{task_proposal.priority}; "
+                                    f"Due date: "
+                                    f"{task_proposal.due_date}"
+                                ),
+                                approval_status=(
+                                    "PENDING_HUMAN_APPROVAL"
+                                ),
+                            )
+
+                        finally:
+
+                            audit_db.close()
+
+                    else:
+
+                        st.session_state.task_proposal = None
+
+
+                    # Reset previous task state
+                    st.session_state.task_status = None
+                    st.session_state.task_id = None
+
+                finally:
+
+                    try:
+
+                        os.remove(temp_path)
+
+                    except OSError:
+
+                        pass
+
+        except Exception as e:
+
+            st.error(
+                "CareBridge could not process "
+                "the request."
             )
-        )
 
-    task_proposal = (
-        st.session_state.task_proposal
-    )
-
-
-    # -----------------------------------------
-    # AUDIT: CARE COORDINATOR AGENT
-    # -----------------------------------------
-
-    audit_db = SessionLocal()
-
-    try:
-
-        log_agent_action(
-            db=audit_db,
-            agent_name="Care Coordinator Agent",
-            action="TASK_PROPOSED",
-            input_reference=(
-                f"Document type: "
-                f"{document_result.document_type}"
-            ),
-            output_reference=(
-                f"Task: "
-                f"{task_proposal.title}; "
-                f"Priority: "
-                f"{task_proposal.priority}; "
-                f"Due date: "
-                f"{task_proposal.due_date}"
-            ),
-            approval_status=(
-                "PENDING_HUMAN_APPROVAL"
-            ),
-        )
-
-    finally:
-
-        audit_db.close()
-
-else:
-
-    st.session_state.task_proposal = None
-
-
-# Reset previous task state
-st.session_state.task_status = None
-st.session_state.task_id = None
+            st.caption(
+                f"Technical details: {e}"
+            )
     # =====================================================
     # DISPLAY INTAKE RESULT
     # =====================================================
