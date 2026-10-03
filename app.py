@@ -59,6 +59,9 @@ def main():
     if "task_proposal" not in st.session_state:
         st.session_state.task_proposal = None
 
+    if "safety_result" not in st.session_state:
+    st.session_state.safety_result = None
+
     if "document_text" not in st.session_state:
         st.session_state.document_text = None
 
@@ -199,7 +202,7 @@ def main():
                         document_text
                     )
 
-                    # -----------------------------------------
+                                      # -----------------------------------------
                     # MEDICAL DOCUMENT AGENT
                     # -----------------------------------------
 
@@ -251,12 +254,66 @@ def main():
 
 
                     # -----------------------------------------
+                    # SAFETY & ESCALATION AGENT
+                    # -----------------------------------------
+
+                    with st.spinner(
+                        "Safety & Escalation Agent is checking..."
+                    ):
+
+                        safety_result = (
+                            crew.analyze_safety(
+                                document_text
+                            )
+                        )
+
+                    st.session_state.safety_result = (
+                        safety_result
+                    )
+
+
+                    # -----------------------------------------
+                    # AUDIT: SAFETY AGENT
+                    # -----------------------------------------
+
+                    audit_db = SessionLocal()
+
+                    try:
+
+                        log_agent_action(
+                            db=audit_db,
+                            agent_name="Safety & Escalation Agent",
+                            action="SAFETY_CHECK_COMPLETED",
+                            input_reference=(
+                                f"Uploaded document: "
+                                f"{uploaded_file.name}"
+                            ),
+                            output_reference=(
+                                f"Status: "
+                                f"{safety_result.status}; "
+                                f"Risk level: "
+                                f"{safety_result.risk_level}"
+                            ),
+                            approval_status=(
+                                "HUMAN_REVIEW_REQUIRED"
+                                if safety_result.requires_human_review
+                                else "SAFE"
+                            ),
+                        )
+
+                    finally:
+
+                        audit_db.close()
+
+
+                    # -----------------------------------------
                     # CARE COORDINATOR AGENT
                     # -----------------------------------------
 
                     if (
                         document_result.follow_up_required
                         and not document_result.requires_human_review
+                        and safety_result.status == "SAFE"
                     ):
 
                         with st.spinner(
@@ -315,27 +372,6 @@ def main():
                     # Reset previous task state
                     st.session_state.task_status = None
                     st.session_state.task_id = None
-
-                finally:
-
-                    try:
-
-                        os.remove(temp_path)
-
-                    except OSError:
-
-                        pass
-
-        except Exception as e:
-
-            st.error(
-                "CareBridge could not process "
-                "the request."
-            )
-
-            st.caption(
-                f"Technical details: {e}"
-            )
     # =====================================================
     # DISPLAY INTAKE RESULT
     # =====================================================
