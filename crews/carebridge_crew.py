@@ -12,10 +12,6 @@ class CareBridgeCrew:
 
         self.llm = get_llm()
 
-        # -----------------------------------------
-        # CAREBRIDGE AGENTS
-        # -----------------------------------------
-
         self.intake_agent = IntakeAgent(
             llm=self.llm
         )
@@ -24,10 +20,8 @@ class CareBridgeCrew:
             llm=self.llm
         )
 
-        self.care_coordinator_agent = (
-            CareCoordinatorAgent(
-                llm=self.llm
-            )
+        self.care_coordinator_agent = CareCoordinatorAgent(
+            llm=self.llm
         )
 
         self.safety_agent = SafetyAgent(
@@ -48,8 +42,9 @@ class CareBridgeCrew:
             user_message,
             trusted_context=trusted_context
         )
+
     # -----------------------------------------
-    # MEDICAL DOCUMENT AGENT
+    # DOCUMENT AGENT
     # -----------------------------------------
 
     def analyze_document(
@@ -62,7 +57,7 @@ class CareBridgeCrew:
         )
 
     # -----------------------------------------
-    # CARE COORDINATOR AGENT
+    # CARE COORDINATOR
     # -----------------------------------------
 
     def propose_care_task(
@@ -75,7 +70,7 @@ class CareBridgeCrew:
         )
 
     # -----------------------------------------
-    # SAFETY & ESCALATION AGENT
+    # SAFETY AGENT
     # -----------------------------------------
 
     def analyze_safety(
@@ -86,3 +81,4 @@ class CareBridgeCrew:
         return self.safety_agent.analyze(
             text
         )
+        
