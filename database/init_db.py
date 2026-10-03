@@ -3,6 +3,10 @@ from database import models
 
 
 def init_database():
+    """
+    Create all CareBridge database tables if they do not already exist.
+    Safe to run every time the Streamlit app starts.
+    """
     Base.metadata.create_all(bind=engine)
 
 
