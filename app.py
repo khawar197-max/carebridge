@@ -372,6 +372,26 @@ def main():
                     # Reset previous task state
                     st.session_state.task_status = None
                     st.session_state.task_id = None
+                                    finally:
+
+                    try:
+
+                        os.remove(temp_path)
+
+                    except OSError:
+
+                        pass
+
+        except Exception as e:
+
+            st.error(
+                "CareBridge could not process "
+                "the request."
+            )
+
+            st.caption(
+                f"Technical details: {e}"
+            )
     # =====================================================
     # DISPLAY INTAKE RESULT
     # =====================================================
