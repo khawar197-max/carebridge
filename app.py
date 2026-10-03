@@ -225,40 +225,41 @@ def main():
             crew = CareBridgeCrew()
 
             # -------------------------------------------------
-# INTAKE AGENT + GROUNDED RESPONSE
-# -------------------------------------------------
+            # INTAKE AGENT + GROUNDED RESPONSE
+            # -------------------------------------------------
 
-if user_message.strip():
+            if user_message.strip():
 
-    with st.spinner(
-        "CareBridge is analyzing your request..."
-    ):
+                with st.spinner(
+                    "CareBridge is analyzing your request..."
+                ):
 
-        trusted_context = "\n\n".join(
-            rag_results
-        )
+                    trusted_context = "\n\n".join(
+                        rag_results
+                    )
 
-        st.session_state.intake_result = (
-            crew.process_request(
-                user_message,
-                trusted_context=trusted_context
-            )
-        )
+                    st.session_state.intake_result = (
+                        crew.process_request(
+                            user_message,
+                            trusted_context=trusted_context
+                        )
+                    )
 
-        # Generate grounded response only when
-        # trusted knowledge was retrieved.
-        if rag_results:
+                    # Generate grounded response only when
+                    # trusted knowledge was retrieved.
+                    if rag_results:
 
-            st.session_state.grounded_response = (
-                crew.generate_grounded_response(
-                    user_question=user_message,
-                    trusted_context=trusted_context
-                )
-            )
+                        st.session_state.grounded_response = (
+                            crew.generate_grounded_response(
+                                user_question=user_message,
+                                trusted_context=trusted_context
+                            )
+                        )
 
-        else:
+                    else:
 
-            st.session_state.grounded_response = None
+                        st.session_state.grounded_response = None
+
             # -------------------------------------------------
             # DOCUMENT AGENT
             # -------------------------------------------------
@@ -305,7 +306,10 @@ if user_message.strip():
                         document_text
                     )
 
-                                      # -----------------------------------------
+                    # -----------------------------------------
+                    # MEDICAL DOCUMENT AGENT
+                    # -----------------------------------------
+                     # -----------------------------------------
                     # MEDICAL DOCUMENT AGENT
                     # -----------------------------------------
 
