@@ -1156,52 +1156,52 @@ def main():
 
     st.divider()
 
-   st.header(
-    "🔍 Audit & Traceability"
-)
-
-st.caption(
-    "Recorded CareBridge actions for traceability, "
-    "human oversight, and accountability."
-)
-
-# =====================================================
-# DEMO AUDIT RESET
-# =====================================================
-
-with st.expander(
-    "🧹 Demo Controls"
-):
-
-    st.warning(
-        "This removes all stored audit events from "
-        "the local CareBridge demo database."
+    st.header(
+        "🔍 Audit & Traceability"
     )
 
-    if st.button(
-        "Clear Audit Log",
-        key="clear_audit_log",
+    st.caption(
+        "Recorded CareBridge actions for traceability, "
+        "human oversight, and accountability."
+    )
+
+    # =====================================================
+    # DEMO AUDIT RESET
+    # =====================================================
+
+    with st.expander(
+        "🧹 Demo Controls"
     ):
 
-        db = SessionLocal()
-
-        try:
-
-            from database.models import AuditLog
-
-            db.query(AuditLog).delete()
-
-            db.commit()
-
-        finally:
-
-            db.close()
-
-        st.success(
-            "Audit log cleared successfully."
+        st.warning(
+            "This removes all stored audit events from "
+            "the local CareBridge demo database."
         )
 
-        st.rerun()
+        if st.button(
+            "Clear Audit Log",
+            key="clear_audit_log",
+        ):
+
+            db = SessionLocal()
+
+            try:
+
+                from database.models import AuditLog
+
+                db.query(AuditLog).delete()
+
+                db.commit()
+
+            finally:
+
+                db.close()
+
+            st.success(
+                "Audit log cleared successfully."
+            )
+
+            st.rerun()
 
     db = SessionLocal()
 
