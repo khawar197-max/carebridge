@@ -64,7 +64,7 @@ def main():
         st.session_state.safety_result = None
 
     if "grounded_response" not in st.session_state:
-        st.session_state.grounded_response = None
+        st.session_state["grounded_response"] = None
 
     if "document_text" not in st.session_state:
         st.session_state.document_text = None
@@ -558,7 +558,7 @@ def main():
 # DISPLAY GROUNDED AI RESPONSE
 # =====================================================
 
-if st.session_state.grounded_response:
+if st.session_state.get("grounded_response"):
 
     grounded = (
         st.session_state.grounded_response
