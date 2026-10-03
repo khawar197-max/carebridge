@@ -60,7 +60,7 @@ def main():
         st.session_state.task_proposal = None
 
     if "safety_result" not in st.session_state:
-    st.session_state.safety_result = None
+        st.session_state.safety_result = None
 
     if "document_text" not in st.session_state:
         st.session_state.document_text = None
