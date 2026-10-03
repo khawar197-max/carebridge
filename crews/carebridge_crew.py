@@ -40,13 +40,14 @@ class CareBridgeCrew:
 
     def process_request(
         self,
-        user_message: str
+        user_message: str,
+        trusted_context: str = ""
     ):
 
         return self.intake_agent.analyze(
-            user_message
+            user_message,
+            trusted_context=trusted_context
         )
-
     # -----------------------------------------
     # MEDICAL DOCUMENT AGENT
     # -----------------------------------------
