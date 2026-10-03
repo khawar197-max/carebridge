@@ -184,6 +184,21 @@ def main():
             crew = CareBridgeCrew()
 
             # -------------------------------------------------
+            # MEMORY AGENT
+            # -------------------------------------------------
+
+            memory_result = None
+
+            if user_message.strip() and patient_id:
+
+            memory_result = crew.retrieve_patient_memory(
+                query=user_message,
+                    patient_id=patient_id,
+                        )
+
+            st.session_state.memory_result = memory_result
+
+            # -------------------------------------------------
             # INTAKE AGENT + GROUNDED RESPONSE
             # -------------------------------------------------
 
