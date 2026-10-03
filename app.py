@@ -555,6 +555,48 @@ if user_message.strip():
         )
 
     # =====================================================
+# DISPLAY GROUNDED AI RESPONSE
+# =====================================================
+
+if st.session_state.grounded_response:
+
+    grounded = (
+        st.session_state.grounded_response
+    )
+
+    st.divider()
+
+    st.subheader(
+        "🤖 Grounded AI Response"
+    )
+
+    if grounded.grounded:
+        st.success(
+            grounded.answer
+        )
+    else:
+        st.warning(
+            grounded.answer
+        )
+
+    if grounded.sources:
+
+        st.write(
+            "**📚 Source Attribution:**"
+        )
+
+        for source in grounded.sources:
+            st.write(
+                f"• {source}"
+            )
+
+    st.caption(
+        "This response was generated only from "
+        "approved CareBridge trusted knowledge. "
+        "It does not provide diagnosis, treatment, "
+        "or medication advice."
+    )
+    # =====================================================
     # DISPLAY DOCUMENT RESULT
     # =====================================================
 
