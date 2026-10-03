@@ -4,6 +4,7 @@ from agents.intake_agent import IntakeAgent
 from agents.document_agent import DocumentAgent
 from agents.care_coordinator_agent import CareCoordinatorAgent
 from agents.safety_agent import SafetyAgent
+from agents.grounded_response_agent import GroundedResponseAgent
 
 
 class CareBridgeCrew:
@@ -27,7 +28,9 @@ class CareBridgeCrew:
         self.safety_agent = SafetyAgent(
             llm=self.llm
         )
-
+        self.grounded_response_agent = GroundedResponseAgent(
+            llm=self.llm
+        )
     # -----------------------------------------
     # INTAKE AGENT
     # -----------------------------------------
@@ -43,6 +46,24 @@ class CareBridgeCrew:
             trusted_context=trusted_context
         )
 
+    # -----------------------------------------
+    # GROUNDED RESPONSE AGENT
+    # -----------------------------------------
+
+    def generate_grounded_response(
+        self,
+        user_question: str,
+        trusted_context: str = ""
+    ):
+
+        return self.grounded_response_agent.generate(
+            user_question,
+            trusted_context=trusted_context
+        )
+
+    # -----------------------------------------
+    # DOCUMENT AGENT
+    # -----------------------------------------
     # -----------------------------------------
     # DOCUMENT AGENT
     # -----------------------------------------
